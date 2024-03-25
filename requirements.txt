@@ -1,5 +1,7 @@
 asyncio
 yt-dlp
 python-dotenv
+spotipy
 discord
+discord.py
 PyNaCl

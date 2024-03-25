@@ -1,81 +1,49 @@
-import os
-import discord
 import asyncio
+
 import yt_dlp
-from dotenv import load_dotenv
+import discord
+from discord.ext import commands
+from .base import BaseCog
 
 
-def run_bot():
-    load_dotenv()
-    TOKEN = os.getenv('DISCORD_TOKEN')
-    intents = discord.Intents.all()
-    intents.message_content = True
-    client = discord.Client(intents=intents)
+class YouTubeCog(BaseCog):
+    def __init__(self, client):
+        super().__init__(client)
+        self.ydl_opts = {
+            'format': 'bestaudio/best',
+            'postprocessors': [{
+                'key': 'FFmpegExtractAudio',
+                'preferredcodec': 'mp3',
+                'preferredquality': '192'
+            }]
+        }
+        self.ffmpeg_options = {
+            'options': '-vn -nostdin'
+        }
+        self.ytdl = yt_dlp.YoutubeDL(self.ydl_opts)
+        self.voice_clients = {}
 
-    queue = {}
-    voice_clients = {}
-    ydl_opts = {
-        'format': 'bestaudio/best',
-        'postprocessors': [{
-            'key': 'FFmpegExtractAudio',
-            'preferredcodec': 'mp3',
-            'preferredquality': '192'
-        }]
-    }
-    ffmpeg_opts = {
-        'options': '-vn'
-    }
+    @commands.command(name="play")
+    async def play(self, ctx, url):
+        voice_client = None
+        try:
+            voice_client = await ctx.author.voice.channel.connect()
+            self.voice_clients[ctx.guild.id] = voice_client
 
-    ytdl = yt_dlp.YoutubeDL(ydl_opts)
+            loop = asyncio.get_event_loop()
+            data = await loop.run_in_executor(None, lambda: self.ytdl.extract_info(url, download=False))
 
-    @client.event
-    async def on_ready():
-        await client.change_presence(activity=discord.Streaming(name="Barking!", url="https://twitch.tv/agua_paneia"))
-        print(f"{client.user} on duty!")
+            song = data['url']
+            player = discord.FFmpegPCMAudio(song, **self.ffmpeg_options)
 
-    @client.event
-    async def on_message(message):
-        if message.content.startswith(';;play'):
-            try:
-                voice_client = await message.author.voice.channel.connect()
-                voice_clients[voice_client.guild.id] = voice_client
+            voice_client.play(player)
+            await ctx.send(f"Playing {data['title']}")
+        except Exception as e:
+            print(f"Error playing YouTube audio: {e}")
+            await ctx.send(f"An error occurred while playing YouTube audio")
 
-                url = message.content.split()[1]
+            if voice_client:
+                await voice_client.disconnect()
+                del self.voice_clients[ctx.guild.id]
 
-                loop = asyncio.get_event_loop()
-                data = await loop.run_in_executor(None, lambda: ytdl.extract_info(url, download=False))
 
-                song = data['url']
-                player = discord.FFmpegPCMAudio(song, **ffmpeg_opts)
-
-                voice_clients[message.guild.id].play(player)
-                # voice_client.play(player)
-            except Exception as e:
-                print(e)
-
-        if message.content.startswith(';;pause'):
-            try:
-                voice_clients[message.guild.id].pause()
-            except Exception as e:
-                print(e)
-
-        if message.content.startswith(';;resume'):
-            try:
-                voice_clients[message.guild.id].resume()
-            except Exception as e:
-                print(e)
-
-        if message.content.startswith(';;stop'):
-            try:
-                voice_clients[message.guild.id].stop()
-                await voice_clients[message.guild.id].disconnect()
-            except Exception as e:
-                print(e)
-
-        if message.content.startswith(';;queue'):
-            try:
-                pass
-            except Exception as e:
-                print(e)
-
-    client.run(TOKEN)

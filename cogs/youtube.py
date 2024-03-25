@@ -35,22 +35,19 @@ class YouTubeCog(BaseCog):
             song = data['url']
             player = discord.FFmpegPCMAudio(song, **self.ffmpeg_options)
 
-            if voice_client and voice_client.is_playing():
+            if voice_client is None or not voice_client.is_connected():
+                voice_client = await ctx.author.voice.channel.connect()
+
+            if not self.queue:
+                self.queue.append(player)
+                self.songs.append(data['title'])
+                await ctx.send(f"Now playing **{data['title']}**")
+
+                voice_client.play(player)
+            else:
                 self.queue.append(player)
                 self.songs.append(data['title'])
                 await ctx.send(f"Added **{data['title']}** to the queue")
-            else:
-                voice_client = await ctx.author.voice.channel.connect()
-                self.queue.append(player)
-                self.songs.append(data['title'])
-
-                await ctx.send(f"Now playing **{data['title']}**")
-                voice_client.play(self.queue[0])
-            while voice_client.is_playing():
-                await asyncio.sleep(1)
-            voice_client.play(self.queue[0])
-            self.queue.pop(0)
-            self.songs.pop(0)
         except Exception as e:
             print(f"Error playing YouTube audio: {e}")
             await ctx.send(f"An error occurred while playing YouTube audio")
@@ -76,7 +73,7 @@ class YouTubeCog(BaseCog):
         if voice_client is None or not voice_client.is_connected():
             await ctx.send("I'm not currently connected to a voice channel!")
             return
-        if len(self.queue) == 1:
+        if not self.queue:
             await ctx.send("There are no songs in the queue to skip!")
             return
 

@@ -10,7 +10,7 @@ from cogs.youtube import YouTubeCog
 
 class Bot(commands.Bot):
     def __init__(self):
-        super().__init__(command_prefix="?", intents=discord.Intents.all())
+        super().__init__(command_prefix="!", intents=discord.Intents.all())
         load_dotenv()
 
     async def on_ready(self):

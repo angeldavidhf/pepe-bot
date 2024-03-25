@@ -80,12 +80,12 @@ class YouTubeCog(BaseCog):
             await ctx.send("There are no songs in the queue to skip!")
             return
 
-        voice_client.stop()  # Stop playing the current song
+        voice_client.stop()
         await ctx.send(f"Skipped **{self.songs[0]}** and playing the next song in the queue.")
-        self.queue.pop(0)  # Remove the skipped song from the queue
-        self.songs.pop(0)  # Remove the skipped song's title from the list
+        self.queue.pop(0)
+        self.songs.pop(0)
 
-        if self.queue:  # If there are still songs in the queue
+        if self.queue:
             voice_client.play(self.queue[0])
             await ctx.send(f"Now playing **{self.songs[0]}**")
 
@@ -93,31 +93,31 @@ class YouTubeCog(BaseCog):
     async def pause(self, ctx):
         voice_client = ctx.guild.voice_client
         if voice_client is None or not voice_client.is_playing():
-            await ctx.send("No hay música reproduciéndose actualmente.")
+            await ctx.send("There is no music currently playing.")
             return
 
         voice_client.pause()
-        await ctx.send("Música pausada.")
+        await ctx.send(f"Paused **{self.songs[0]}**")
 
     @commands.command(name="resume")
     async def resume(self, ctx):
         voice_client = ctx.guild.voice_client
         if voice_client is None or not voice_client.is_paused():
-            await ctx.send("No hay música pausada para reanudar.")
+            await ctx.send("There is no paused music to resume.")
             return
 
         voice_client.resume()
-        await ctx.send("Música reanudada.")
+        await ctx.send(f"Resume **{self.songs[0]}**")
 
     @commands.command(name="stop")
     async def stop(self, ctx):
         voice_client = ctx.guild.voice_client
         if voice_client is None or not voice_client.is_connected():
-            await ctx.send("No estoy conectado a un canal de voz.")
+            await ctx.send("I am not connected to a voice channel.")
             return
 
         voice_client.stop()
-        await ctx.send("Música detenida y desconectado del canal de voz.")
+        await ctx.send("Music stopped and disconnected from the voice channel.")
         await voice_client.disconnect()
 
 

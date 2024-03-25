@@ -22,7 +22,7 @@ class SpotifyCog(BaseCog):
 
         self.spotify = Spotify(auth_manager=self.auth_manager)
 
-    @commands.command('play')
+    @commands.command('plays')
     async def play(self, ctx, *, query):
         voice_client = None
         try:

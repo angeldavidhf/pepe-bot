@@ -18,17 +18,17 @@ class YouTubeCog(BaseCog):
             }]
         }
         self.ffmpeg_options = {
-            'options': '-vn -nostdin'
+            'options': '-vn',
+            'before_options': '-reconnect 1 -reconnect_streamed 1 -reconnect_delay_max 5'
         }
         self.ytdl = yt_dlp.YoutubeDL(self.ydl_opts)
-        self.voice_clients = {}
+        self.queue = {}
 
     @commands.command(name="play")
     async def play(self, ctx, url):
         voice_client = None
         try:
             voice_client = await ctx.author.voice.channel.connect()
-            self.voice_clients[ctx.guild.id] = voice_client
 
             loop = asyncio.get_event_loop()
             data = await loop.run_in_executor(None, lambda: self.ytdl.extract_info(url, download=False))
@@ -44,6 +44,3 @@ class YouTubeCog(BaseCog):
 
             if voice_client:
                 await voice_client.disconnect()
-                del self.voice_clients[ctx.guild.id]
-
-
